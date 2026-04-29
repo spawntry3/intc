@@ -1,0 +1,462 @@
+{% extends 'base.html' %}
+{% block title %}Дашборд — IT College Almaty{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div class="page-title">
+      <h1>Дашборд аналитики</h1>
+      <p>IT College Almaty, 2GIS и Instagram · {{ settings.dashboard_year_label }}</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span class="badge">Данные из БД</span>
+      <button type="button" class="sync-btn" onclick="location.reload()">Обновить страницу</button>
+      <a class="sync-btn sync-btn--primary" href="{% url 'admin:index' %}">Редактировать данные</a>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card green">
+      <div class="kpi-marker" aria-hidden="true"></div>
+      <div class="kpi-value" style="color:var(--green)">{{ avg_rating }}</div>
+      <div class="kpi-label">Рейтинг на 2GIS</div>
+      <div class="kpi-sub"><span class="stat-up">{{ positive_pct }}%</span> положительных из {{ total_reviews_2gis }} отзывов</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-marker" aria-hidden="true"></div>
+      <div class="kpi-value">{{ total_reviews_2gis }}</div>
+      <div class="kpi-label">Всего отзывов 2GIS</div>
+      <div class="kpi-sub"><span class="stat-up">{{ positive_2gis }}</span> позитивных · <span class="stat-neg">{{ negative_2gis }}</span> негативных</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-marker" aria-hidden="true"></div>
+      <div class="kpi-value" style="color:var(--blue)">{{ followers }}</div>
+      <div class="kpi-label">Подписчики Instagram</div>
+      <div class="kpi-sub"><span class="stat-up">{{ total_ig_posts }}</span> публикаций · <span class="stat-up">{{ avg_likes }}</span> ср. лайков</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-marker" aria-hidden="true"></div>
+      <div class="kpi-value" style="color:var(--violet)">{{ avg_engagement }}%</div>
+      <div class="kpi-label">Engagement Rate</div>
+      <div class="kpi-sub">Ориентир для колледжей: <span class="stat-up">5–8%</span></div>
+    </div>
+  </div>
+
+  <div class="grid-large">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Динамика отзывов по месяцам</div>
+          <div class="card-subtitle">Положительные и отрицательные · {{ settings.dashboard_year_label }}</div>
+        </div>
+      </div>
+      <div class="chart-container" style="height:260px">
+        <canvas id="trendsChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Тональность всех отзывов</div>
+        <div class="card-subtitle">2GIS и Instagram</div>
+      </div>
+      <div class="chart-container" style="height:220px">
+        <canvas id="sentimentChart"></canvas>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span>Положительные</span><span style="color:var(--green);font-weight:700">{{ all_sentiment_counts.positive }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span>Отрицательные</span><span style="color:var(--red);font-weight:700">{{ all_sentiment_counts.negative }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span>Нейтральные</span><span style="color:var(--violet);font-weight:700">{{ all_sentiment_counts.neutral }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Тональность отзывов 2GIS</div>
+      </div>
+      <div class="chart-container" style="height:200px">
+        <canvas id="gisSentimentChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Тональность в Instagram</div>
+        <div class="card-subtitle">Комментарии и упоминания (демо)</div>
+      </div>
+      <div class="chart-container" style="height:200px">
+        <canvas id="igSentimentChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Подписчики Instagram по месяцам</div>
+          <div class="card-subtitle">{{ settings.dashboard_year_label }}</div>
+        </div>
+      </div>
+      <div class="chart-container" style="height:220px">
+        <canvas id="followersChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Engagement Rate по месяцам</div>
+          <div class="card-subtitle">Процент вовлечённости</div>
+        </div>
+      </div>
+      <div class="chart-container" style="height:220px">
+        <canvas id="engagementChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Сравнение с другими колледжами</div>
+  <div class="grid-2" style="margin-bottom:24px">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Рейтинг на 2GIS</div>
+      </div>
+      <div class="chart-container" style="height:240px">
+        <canvas id="compRatingChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Подписчики Instagram</div>
+      </div>
+      <div class="chart-container" style="height:240px">
+        <canvas id="compFollowersChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-header">
+      <div class="card-title">Сводная таблица</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Колледж</th>
+          <th>Рейтинг 2GIS</th>
+          <th>Отзывов</th>
+          <th>% позитивных</th>
+          <th>Подписчики IG</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for comp in competitors %}
+        <tr {% if forloop.first %}class="highlight"{% endif %}>
+          <td>{% if forloop.first %}<span class="our-row-badge">Мы</span>{% endif %}{{ comp.name }}</td>
+          <td>
+            <div class="rating-bar">
+              <span style="font-weight:700;min-width:30px">{{ comp.rating_2gis }}</span>
+              <div class="bar-bg"><div class="rating-fill" style="width:{% widthratio comp.rating_2gis 5 100 %}%"></div></div>
+            </div>
+          </td>
+          <td>{{ comp.reviews_count }}</td>
+          <td>
+            <div class="rating-bar">
+              <span style="min-width:36px">{{ comp.positive_percent }}%</span>
+              <div class="bar-bg"><div class="pct-fill" style="width:{{ comp.positive_percent }}%"></div></div>
+            </div>
+          </td>
+          <td>{{ comp.instagram_followers }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">Отзывы 2GIS</div>
+  <div class="grid-2" style="margin-bottom:24px">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="color:var(--green)">Положительные</div>
+        <a href="{% url 'reviews' %}" class="text-link">Все отзывы</a>
+      </div>
+      {% for r in recent_positive %}
+        <div class="review-item positive">
+          <div class="review-header">
+            <span class="review-author">{{ r.author }}</span>
+            <span class="review-meta">
+              {% if r.rating %}<span class="rating-num">{{ r.rating }} из 5</span> · {% endif %}{{ r.date }}
+            </span>
+          </div>
+          <div class="review-text">{{ r.text }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="color:var(--red)">Отрицательные</div>
+      </div>
+      {% for r in recent_negative %}
+        <div class="review-item negative">
+          <div class="review-header">
+            <span class="review-author">{{ r.author }}</span>
+            <span class="review-meta">
+              {% if r.rating %}<span class="rating-num">{{ r.rating }} из 5</span> · {% endif %}{{ r.date }}
+            </span>
+          </div>
+          <div class="review-text">{{ r.text }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section-title">Instagram: публикации и комментарии</div>
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Популярные публикации по лайкам</div>
+        <div class="card-subtitle">Официальный аккаунт @it_college_almaty</div>
+      </div>
+      <a href="{{ instagram_url }}" target="_blank" rel="noopener noreferrer" class="text-link">Открыть профиль</a>
+    </div>
+    <div class="posts-grid">
+      {% for post in top_posts %}
+      <div class="post-card">
+        <div class="post-img">
+          {% if post.image_url %}
+            <img src="{{ post.image_url }}" alt="" loading="lazy">
+          {% else %}
+            <span class="post-placeholder-label">Изображение</span>
+          {% endif %}
+        </div>
+        <span class="eng-badge">{{ post.engagement_rate }}%</span>
+        <div class="post-info">
+          <div class="post-caption">{{ post.caption }}</div>
+          <div class="post-stats">
+            <span>Лайки: {{ post.likes }}</span>
+            <span>Комментарии: {{ post.comments }}</span>
+            <span>Дата: {{ post.date }}</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="color:var(--green)">Комментарии Instagram: позитив</div>
+      </div>
+      {% for r in recent_ig_reviews %}
+        {% if r.sentiment == 'positive' %}
+        <div class="review-item positive">
+          <div class="review-header">
+            <span class="review-author">{{ r.author }}</span>
+            <span class="review-meta">{{ r.date }} · лайков: {{ r.likes }}</span>
+          </div>
+          <div class="review-text">{{ r.text }}</div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="color:var(--red)">Комментарии Instagram: негатив</div>
+      </div>
+      {% for r in recent_ig_reviews %}
+        {% if r.sentiment == 'negative' %}
+        <div class="review-item negative">
+          <div class="review-header">
+            <span class="review-author">{{ r.author }}</span>
+            <span class="review-meta">{{ r.date }} · лайков: {{ r.likes }}</span>
+          </div>
+          <div class="review-text">{{ r.text }}</div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section-title">Рекомендации по 2GIS и Instagram</div>
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Выводы для SMM и репутации</div>
+        <div class="card-subtitle">На основе показателей в базе данных</div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:13px;color:var(--text-muted)">{{ recommendations|length }} пунктов</span>
+        <a href="{% url 'recommendations' %}" class="text-link">Отдельная страница</a>
+      </div>
+    </div>
+    {% for rec in recommendations %}
+    <div class="rec-item">
+      <div class="rec-icon rec-icon--{{ rec.icon_variant }}" aria-hidden="true"></div>
+      <div class="rec-body">
+        <div class="rec-header">
+          <span class="rec-title">{{ rec.title }}</span>
+          <span class="rec-platform {% if rec.platform == '2GIS' %}gis{% else %}ig{% endif %}">{{ rec.platform }}</span>
+          <span class="priority-{{ rec.priority }}">{% if rec.priority == 'high' %}Высокий приоритет{% elif rec.priority == 'medium' %}Средний приоритет{% else %}Низкий приоритет{% endif %}</span>
+        </div>
+        <p class="rec-desc">{{ rec.desc }}</p>
+        <ul class="rec-actions">
+          {% for action in rec.actions %}
+          <li>{{ action }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="footer-spacer"></div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const MONTHS = {{ months_labels|safe }};
+const POSITIVE = {{ positive_data|safe }};
+const NEGATIVE = {{ negative_data|safe }};
+const FOLLOWERS = {{ followers_data|safe }};
+const ENGAGEMENT = {{ engagement_data|safe }};
+const SENTIMENT = {{ sentiment_data|safe }};
+const GIS_SENTIMENT = {{ gis_sentiment_data|safe }};
+const IG_SENTIMENT = {{ ig_sentiment_data|safe }};
+const COMP_NAMES = {{ comp_names|safe }};
+const COMP_RATINGS = {{ comp_ratings|safe }};
+const COMP_FOLLOWERS = {{ comp_followers|safe }};
+
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+
+const gridOpts = { color: 'rgba(100,116,139,0.15)', lineWidth: 1 };
+const doughnutOpts = (id) => ({
+  type: 'doughnut',
+  data: {
+    labels: ['Положительные', 'Отрицательные', 'Нейтральные'],
+    datasets: [{
+      data: id === 'gis' ? GIS_SENTIMENT : IG_SENTIMENT,
+      backgroundColor: ['rgba(4,120,87,0.85)', 'rgba(185,28,28,0.8)', 'rgba(91,33,182,0.75)'],
+      borderWidth: 0, hoverOffset: 8
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '60%',
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+  }
+});
+
+new Chart(document.getElementById('trendsChart'), {
+  type: 'bar',
+  data: {
+    labels: MONTHS,
+    datasets: [
+      { label: 'Положительные', data: POSITIVE, backgroundColor: 'rgba(4,120,87,0.75)', borderRadius: 6, borderSkipped: false },
+      { label: 'Отрицательные', data: NEGATIVE, backgroundColor: 'rgba(185,28,28,0.65)', borderRadius: 6, borderSkipped: false },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } },
+    scales: {
+      x: { grid: gridOpts, ticks: { font: { size: 12 } } },
+      y: { grid: gridOpts, beginAtZero: true, ticks: { stepSize: 5 } }
+    }
+  }
+});
+
+new Chart(document.getElementById('sentimentChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Положительные', 'Отрицательные', 'Нейтральные'],
+    datasets: [{ data: SENTIMENT,
+      backgroundColor: ['rgba(4,120,87,0.85)', 'rgba(185,28,28,0.8)', 'rgba(91,33,182,0.75)'],
+      borderWidth: 0, hoverOffset: 8 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '65%',
+    plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 12 } } } }
+  }
+});
+
+new Chart(document.getElementById('gisSentimentChart'), doughnutOpts('gis'));
+new Chart(document.getElementById('igSentimentChart'), doughnutOpts('ig'));
+
+const yFollowers = FOLLOWERS.length ? Math.min(...FOLLOWERS) - 200 : 3700;
+new Chart(document.getElementById('followersChart'), {
+  type: 'line',
+  data: {
+    labels: MONTHS,
+    datasets: [{ label: 'Подписчики', data: FOLLOWERS, borderColor: '#1d4ed8',
+      backgroundColor: 'rgba(29,78,216,0.08)', fill: true, tension: 0.4, pointRadius: 4,
+      pointBackgroundColor: '#1d4ed8' }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpts },
+      y: { grid: gridOpts, min: yFollowers, ticks: { callback: (v) => v.toLocaleString() } }
+    }
+  }
+});
+
+new Chart(document.getElementById('engagementChart'), {
+  type: 'line',
+  data: {
+    labels: MONTHS,
+    datasets: [{ label: 'Engagement %', data: ENGAGEMENT, borderColor: '#5b21b6',
+      backgroundColor: 'rgba(91,33,182,0.08)', fill: true, tension: 0.4, pointRadius: 4,
+      pointBackgroundColor: '#5b21b6' }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpts },
+      y: { grid: gridOpts, beginAtZero: false, ticks: { callback: (v) => v + '%' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('compRatingChart'), {
+  type: 'bar',
+  data: {
+    labels: COMP_NAMES,
+    datasets: [{ label: 'Рейтинг', data: COMP_RATINGS,
+      backgroundColor: COMP_NAMES.map((_, i) => i === 0 ? 'rgba(15,118,110,0.9)' : 'rgba(15,118,110,0.28)'),
+      borderRadius: 8, borderSkipped: false }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpts, min: 3.5, max: 5 },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('compFollowersChart'), {
+  type: 'bar',
+  data: {
+    labels: COMP_NAMES,
+    datasets: [{ label: 'Подписчики', data: COMP_FOLLOWERS,
+      backgroundColor: COMP_NAMES.map((_, i) => i === 0 ? 'rgba(91,33,182,0.85)' : 'rgba(91,33,182,0.28)'),
+      borderRadius: 8, borderSkipped: false }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpts, ticks: { callback: (v) => v.toLocaleString() } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+</script>
+{% endblock %}

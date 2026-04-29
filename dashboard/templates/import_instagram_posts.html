@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Импорт Instagram-постов{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div class="page-title">
+      <h1>Импорт Instagram-постов</h1>
+      <p>Загрузка CSV и обновление базы для графиков</p>
+    </div>
+    <a class="sync-btn" href="{% url 'dashboard' %}">На дашборд</a>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Файл CSV</div>
+        <div class="card-subtitle">
+          Обязательные колонки: <code>post_id</code>, <code>caption</code>, <code>likes</code>, <code>comments</code>, <code>date</code>.
+          <br />
+          Дополнительно: <code>image_url</code>, <code>post_url</code>, <code>hashtags</code>, <code>engagement_rate</code>.
+        </div>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div style="display:flex;flex-direction:column;gap:10px">
+        {{ form.as_p }}
+        <button class="sync-btn sync-btn--primary" type="submit">Импортировать</button>
+      </div>
+    </form>
+  </div>
+
+  <p class="muted-note">
+    После загрузки данные обновляются в графиках сразу (они строятся по фактическим <code>Review</code> и <code>InstagramPost</code>).
+  </p>
+{% endblock %}
+

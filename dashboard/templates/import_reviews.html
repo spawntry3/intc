@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Импорт отзывов {{ source_label }}{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div class="page-title">
+      <h1>Импорт отзывов — {{ source_label }}</h1>
+      <p>Загрузка CSV и обновление базы для аналитики</p>
+    </div>
+    <a class="sync-btn" href="{% url 'dashboard' %}">На дашборд</a>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">CSV шаблон</div>
+        <div class="card-subtitle">
+          Обязательные колонки: <code>author</code>, <code>text</code>, <code>sentiment</code>, <code>date</code>.
+          <br />
+          Дополнительно: <code>rating</code>, <code>likes</code>.
+          <br />
+          Формат <code>sentiment</code>: <code>positive</code>, <code>negative</code>, <code>neutral</code>.
+          Дата: <code>YYYY-MM-DD</code> (или <code>DD.MM.YYYY</code>).
+        </div>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div style="display:flex;flex-direction:column;gap:10px">
+        {{ form.as_p }}
+        <button class="sync-btn sync-btn--primary" type="submit">Импортировать</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+

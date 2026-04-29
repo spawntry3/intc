@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}Instagram — аналитика{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div class="page-title">
+      <h1>Instagram</h1>
+      <p>Публикации, ER и комментарии · {{ settings.dashboard_year_label }}</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a class="sync-btn sync-btn--primary" href="{{ instagram_url }}" target="_blank" rel="noopener noreferrer">Открыть профиль</a>
+      <a class="sync-btn" href="{% url 'dashboard' %}">На дашборд</a>
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi-card blue">
+      <div class="kpi-marker" aria-hidden="true"></div>
+      <div class="kpi-value" style="color:var(--blue)">{{ followers }}</div>
+      <div class="kpi-label">Подписчики (KPI)</div>
+      <div class="kpi-sub">Задаётся в <a href="{% url 'admin:dashboard_collegeanalyticssettings_changelist' %}" class="text-link">настройках</a></div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-marker" aria-hidden="true"></div>
+      <div class="kpi-value" style="color:var(--violet)">{{ avg_engagement }}%</div>
+      <div class="kpi-label">Средний ER по постам</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-marker" aria-hidden="true"></div>
+      <div class="kpi-value" style="color:var(--green)">{{ top_posts|length }}</div>
+      <div class="kpi-label">Публикаций в базе</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Подписчики по месяцам</div>
+      </div>
+      <div class="chart-container" style="height:240px"><canvas id="followersChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Engagement по месяцам</div>
+      </div>
+      <div class="chart-container" style="height:240px"><canvas id="engagementChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-header">
+      <div class="card-title">Тональность комментариев Instagram</div>
+    </div>
+    <div class="chart-container" style="height:260px;max-width:420px;margin:0 auto">
+      <canvas id="igSentiment"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title">Все публикации по лайкам</div>
+  <div class="posts-grid">
+    {% for post in top_posts %}
+    <div class="post-card">
+      <div class="post-img">
+        {% if post.image_url %}
+          <img src="{{ post.image_url }}" alt="" loading="lazy">
+        {% else %}
+          <span class="post-placeholder-label">Изображение</span>
+        {% endif %}
+      </div>
+      <span class="eng-badge">{{ post.engagement_rate }}%</span>
+      <div class="post-info">
+        <div class="post-caption">{{ post.caption }}</div>
+        <div class="post-stats">
+          <span>Лайки: {{ post.likes }}</span>
+          <span>Комментарии: {{ post.comments }}</span>
+          <span>Дата: {{ post.date }}</span>
+        </div>
+        {% if post.post_url %}
+        <a href="{{ post.post_url }}" target="_blank" rel="noopener noreferrer" class="text-link" style="font-size:12px;display:inline-block;margin-top:8px">Открыть пост</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="section-title" style="margin-top:28px">Комментарии (демо-данные)</div>
+  <div class="card">
+    {% for r in recent_ig_reviews %}
+    <div class="review-item {% if r.sentiment == 'positive' %}positive{% elif r.sentiment == 'negative' %}negative{% else %}neutral{% endif %}">
+      <div class="review-header">
+        <span class="review-author">@{{ r.author }}</span>
+        <span class="review-meta">{{ r.get_sentiment_display }} · {{ r.date }}</span>
+      </div>
+      <div class="review-text">{{ r.text }}</div>
+    </div>
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const MONTHS = {{ months_labels|safe }};
+const FOLLOWERS = {{ followers_data|safe }};
+const ENGAGEMENT = {{ engagement_data|safe }};
+const IG_SENTIMENT = {{ ig_sentiment_data|safe }};
+const gridOpts = { color: 'rgba(100,116,139,0.15)', lineWidth: 1 };
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+
+const minF = FOLLOWERS.length ? Math.min(...FOLLOWERS) - 200 : 3700;
+new Chart(document.getElementById('followersChart'), {
+  type: 'line',
+  data: {
+    labels: MONTHS,
+    datasets: [{ label: 'Подписчики', data: FOLLOWERS, borderColor: '#1d4ed8',
+      backgroundColor: 'rgba(29,78,216,0.08)', fill: true, tension: 0.4 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false,
+    scales: { x: { grid: gridOpts }, y: { grid: gridOpts, min: minF } } }
+});
+
+new Chart(document.getElementById('engagementChart'), {
+  type: 'line',
+  data: {
+    labels: MONTHS,
+    datasets: [{ label: 'ER %', data: ENGAGEMENT, borderColor: '#5b21b6',
+      backgroundColor: 'rgba(91,33,182,0.08)', fill: true, tension: 0.4 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false,
+    scales: { x: { grid: gridOpts }, y: { grid: gridOpts, ticks: { callback: (v) => v + '%' } } } }
+});
+
+new Chart(document.getElementById('igSentiment'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Положительные', 'Отрицательные', 'Нейтральные'],
+    datasets: [{ data: IG_SENTIMENT,
+      backgroundColor: ['rgba(4,120,87,0.85)', 'rgba(185,28,28,0.8)', 'rgba(91,33,182,0.75)'],
+      borderWidth: 0 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, cutout: '58%',
+    plugins: { legend: { position: 'bottom' } } }
+});
+</script>
+{% endblock %}

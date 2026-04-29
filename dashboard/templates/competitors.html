@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Сравнение с колледжами{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div class="page-title">
+      <h1>Конкуренты</h1>
+      <p>2GIS и Instagram · демо-сравнение · {{ settings.dashboard_year_label }}</p>
+    </div>
+    <a class="sync-btn" href="{% url 'dashboard' %}">На дашборд</a>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Рейтинг 2GIS</div></div>
+      <div class="chart-container" style="height:280px"><canvas id="compRatingChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Подписчики Instagram</div></div>
+      <div class="chart-container" style="height:280px"><canvas id="compFollowersChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Сводная таблица</div>
+      <span style="font-size:13px;color:var(--text-muted)">Наш колледж выделен</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Колледж</th>
+          <th>Рейтинг 2GIS</th>
+          <th>Отзывов</th>
+          <th>% позитивных</th>
+          <th>Подписчики IG</th>
+          <th>Постов</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for comp in competitors %}
+        <tr {% if forloop.first %}class="highlight"{% endif %}>
+          <td>{% if forloop.first %}<span class="our-row-badge">Мы</span>{% endif %}{{ comp.name }}</td>
+          <td>
+            <div class="rating-bar">
+              <span style="font-weight:700">{{ comp.rating_2gis }}</span>
+              <div class="bar-bg"><div class="rating-fill" style="width:{% widthratio comp.rating_2gis 5 100 %}%"></div></div>
+            </div>
+          </td>
+          <td>{{ comp.reviews_count }}</td>
+          <td>
+            <div class="rating-bar">
+              <span>{{ comp.positive_percent }}%</span>
+              <div class="bar-bg"><div class="pct-fill" style="width:{{ comp.positive_percent }}%"></div></div>
+            </div>
+          </td>
+          <td>{{ comp.instagram_followers }}</td>
+          <td>{{ comp.instagram_posts }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const COMP_NAMES = {{ comp_names|safe }};
+const COMP_RATINGS = {{ comp_ratings|safe }};
+const COMP_FOLLOWERS = {{ comp_followers|safe }};
+const gridOpts = { color: 'rgba(100,116,139,0.15)', lineWidth: 1 };
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+
+new Chart(document.getElementById('compRatingChart'), {
+  type: 'bar',
+  data: {
+    labels: COMP_NAMES,
+    datasets: [{ data: COMP_RATINGS,
+      backgroundColor: COMP_NAMES.map((_, i) => i === 0 ? 'rgba(15,118,110,0.9)' : 'rgba(15,118,110,0.28)'),
+      borderRadius: 8 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { min: 3.5, max: 5, grid: gridOpts }, y: { grid: { display: false } } }
+  }
+});
+
+new Chart(document.getElementById('compFollowersChart'), {
+  type: 'bar',
+  data: {
+    labels: COMP_NAMES,
+    datasets: [{ data: COMP_FOLLOWERS,
+      backgroundColor: COMP_NAMES.map((_, i) => i === 0 ? 'rgba(91,33,182,0.85)' : 'rgba(91,33,182,0.28)'),
+      borderRadius: 8 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpts, ticks: { callback: (v) => v.toLocaleString() } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+</script>
+{% endblock %}

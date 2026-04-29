@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Рекомендации — 2GIS и Instagram{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div class="page-title">
+      <h1>Рекомендации</h1>
+      <p>Улучшение присутствия в 2GIS и соцсетях</p>
+    </div>
+    <a class="sync-btn" href="{% url 'dashboard' %}">На дашборд</a>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Приоритетные шаги</div>
+        <div class="card-subtitle">На основе показателей в базе: рейтинг, доля негатива, ER</div>
+      </div>
+      <span style="font-size:13px;color:var(--text-muted)">{{ recommendations|length }} пунктов</span>
+    </div>
+    {% for rec in recommendations %}
+    <div class="rec-item">
+      <div class="rec-icon rec-icon--{{ rec.icon_variant }}" aria-hidden="true"></div>
+      <div class="rec-body">
+        <div class="rec-header">
+          <span class="rec-title">{{ rec.title }}</span>
+          <span class="rec-platform {% if rec.platform == '2GIS' %}gis{% else %}ig{% endif %}">{{ rec.platform }}</span>
+          <span class="priority-{{ rec.priority }}">{% if rec.priority == 'high' %}Высокий приоритет{% elif rec.priority == 'medium' %}Средний приоритет{% else %}Низкий приоритет{% endif %}</span>
+        </div>
+        <p class="rec-desc">{{ rec.desc }}</p>
+        <ul class="rec-actions">
+          {% for action in rec.actions %}
+          <li>{{ action }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="muted-note">
+    Источники для ручного контроля:
+    <a href="{{ gis_url }}" target="_blank" rel="noopener noreferrer">отзывы в 2GIS</a> и
+    <a href="{{ instagram_url }}" target="_blank" rel="noopener noreferrer">Instagram колледжа</a>.
+    Данные на сайте демонстрационные; актуальные показатели вносите в
+    <a href="{% url 'admin:index' %}">админ-панель</a>.
+  </p>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Отзывы — 2GIS и Instagram{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div class="page-title">
+      <h1>Все отзывы</h1>
+      <p>2GIS и Instagram · {{ settings.dashboard_year_label }}</p>
+    </div>
+    <a class="sync-btn" href="{% url 'dashboard' %}">На дашборд</a>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Тональность 2GIS</div>
+      </div>
+      <div class="chart-container" style="height:220px"><canvas id="gisPie"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Тональность Instagram</div>
+      </div>
+      <div class="chart-container" style="height:220px"><canvas id="igPie"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="color:var(--green)">2GIS — положительные</div>
+        <a href="{{ gis_url }}" target="_blank" rel="noopener noreferrer" class="text-link">Открыть 2GIS</a>
+      </div>
+      {% for r in reviews_2gis %}
+        {% if r.sentiment == 'positive' %}
+        <div class="review-item positive">
+          <div class="review-header">
+            <span class="review-author">{{ r.author }}</span>
+            <span class="review-meta">{% if r.rating %}<span class="rating-num">{{ r.rating }} из 5</span> · {% endif %}{{ r.date }}</span>
+          </div>
+          <div class="review-text">{{ r.text }}</div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="color:var(--red)">2GIS — отрицательные</div>
+      </div>
+      {% for r in reviews_2gis %}
+        {% if r.sentiment == 'negative' %}
+        <div class="review-item negative">
+          <div class="review-header">
+            <span class="review-author">{{ r.author }}</span>
+            <span class="review-meta">{% if r.rating %}<span class="rating-num">{{ r.rating }} из 5</span> · {% endif %}{{ r.date }}</span>
+          </div>
+          <div class="review-text">{{ r.text }}</div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section-title">Комментарии Instagram</div>
+  <div class="card">
+    {% for r in reviews_ig %}
+    <div class="review-item {% if r.sentiment == 'positive' %}positive{% elif r.sentiment == 'negative' %}negative{% else %}neutral{% endif %}">
+      <div class="review-header">
+        <span class="review-author">@{{ r.author }}</span>
+        <span class="review-meta">{{ r.get_sentiment_display }} · {{ r.date }} · лайков: {{ r.likes }}</span>
+      </div>
+      <div class="review-text">{{ r.text }}</div>
+    </div>
+    {% empty %}
+    <p class="muted-note">Нет записей. Выполните <code>python manage.py seed_data</code>.</p>
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const GIS_SENTIMENT = {{ gis_sentiment_data|safe }};
+const IG_SENTIMENT = {{ ig_sentiment_data|safe }};
+const colors = ['rgba(4,120,87,0.85)', 'rgba(185,28,28,0.8)', 'rgba(91,33,182,0.75)'];
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+
+function pie(canvasId, data) {
+  new Chart(document.getElementById(canvasId), {
+    type: 'doughnut',
+    data: {
+      labels: ['Положительные', 'Отрицательные', 'Нейтральные'],
+      datasets: [{ data, backgroundColor: colors, borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+    }
+  });
+}
+pie('gisPie', GIS_SENTIMENT);
+pie('igPie', IG_SENTIMENT);
+</script>
+{% endblock %}

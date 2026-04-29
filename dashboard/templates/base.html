@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}IT College Almaty — Аналитика{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<nav class="sidebar" aria-label="Основное меню">
+  <div class="logo">
+    <a href="{% url 'dashboard' %}" class="logo-link">
+      <div class="logo-mark" aria-hidden="true">ITC</div>
+      <h2>IT College Almaty</h2>
+      <span class="logo-tagline">Аналитика соцсетей</span>
+    </a>
+  </div>
+  <span class="nav-label">Разделы</span>
+  <a href="{% url 'dashboard' %}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+    <span class="nav-item-index">01</span>
+    Дашборд
+  </a>
+  <a href="{% url 'reviews' %}" class="nav-item {% if active_page == 'reviews' %}active{% endif %}">
+    <span class="nav-item-index">02</span>
+    Отзывы
+  </a>
+  <a href="{% url 'instagram' %}" class="nav-item {% if active_page == 'instagram' %}active{% endif %}">
+    <span class="nav-item-index">03</span>
+    Instagram
+  </a>
+  <a href="{% url 'competitors' %}" class="nav-item {% if active_page == 'competitors' %}active{% endif %}">
+    <span class="nav-item-index">04</span>
+    Конкуренты
+  </a>
+  <a href="{% url 'recommendations' %}" class="nav-item {% if active_page == 'recommendations' %}active{% endif %}">
+    <span class="nav-item-index">05</span>
+    Рекомендации
+  </a>
+  <div style="margin-top:0.5rem"><span class="nav-label">Внешние ссылки</span></div>
+  <div class="sidebar-footer">
+    <a href="{{ gis_url }}" target="_blank" rel="noopener noreferrer" class="ext-link">2GIS — отзывы организации</a>
+    <a href="{{ instagram_url }}" target="_blank" rel="noopener noreferrer" class="ext-link">Instagram</a>
+    <a href="{% url 'admin:index' %}" class="ext-link">Админ-панель Django</a>
+  </div>
+
+  <div style="margin-top:10px"><span class="nav-label">Импорт CSV</span></div>
+  <div class="sidebar-footer" style="border-top:none;padding-top:0;">
+    <a href="{% url 'import_instagram_posts' %}" class="ext-link">Instagram-посты</a>
+    <a href="{% url 'import_reviews_2gis' %}" class="ext-link">Отзывы 2GIS</a>
+    <a href="{% url 'import_reviews_instagram' %}" class="ext-link">Отзывы Instagram</a>
+  </div>
+</nav>
+
+<main class="main">
+{% if messages %}
+  <div style="margin-bottom:16px">
+    {% for message in messages %}
+      <div style="padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);color:var(--text);font-size:13px;margin-bottom:10px;">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% block content %}{% endblock %}
+</main>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
